@@ -1,3 +1,3 @@
 # Feature: Reinforcement Learning Loop
 
-## Components
+## Description

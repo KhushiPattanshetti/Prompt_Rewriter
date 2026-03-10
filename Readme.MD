@@ -1,3 +1,0 @@
-# Feature: Reward Metrics
-
-## Description

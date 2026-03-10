@@ -65,3 +65,13 @@ pip install -r requirements.txt
 
 ## License
 MIT
+## Forwarding Logic Explained
+
+The forwarding logic in `app/forwarder.py` works as follows:
+- After validation and storage, the clinical note, filename, and instruction ID are packaged into a JSON payload.
+- If the environment variable `PROMPT_REWRITER_URL` is set, the service sends this payload as a POST request to the specified URL (which can be a FastAPI endpoint or any other HTTP server).
+- If `PROMPT_REWRITER_URL` is not set, the forwarding is simulated: the payload is logged and no real HTTP request is made. This is useful for development and testing.
+- The forwarding function returns a dictionary indicating whether the forward was successful, the destination, and any errors encountered.
+
+This design allows easy integration with downstream services and ensures reliability by logging errors and supporting simulation mode for development.
+

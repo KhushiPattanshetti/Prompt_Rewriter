@@ -13,7 +13,10 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-PROMPT_REWRITER_URL = os.environ.get("PROMPT_REWRITER_URL", "")
+PROMPT_REWRITER_URL = os.environ.get(
+    "PROMPT_REWRITER_URL",
+    "http://rewriter_sft_svc:8000/rewrite"
+)
 
 
 def forward_to_prompt_rewriter(

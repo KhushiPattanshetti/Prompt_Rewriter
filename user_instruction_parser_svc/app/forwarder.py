@@ -71,16 +71,18 @@ def forward_to_prompt_rewriter(
 			headers={"Content-Type": "application/json"},
 			method="POST",
 		)
-		with urllib.request.urlopen(req, timeout=10) as response:
-			response_body = response.read().decode("utf-8")
-			logger.info("[FORWARDER] Successfully forwarded to %s", PROMPT_REWRITER_URL)
-			return {
-				"forwarded": True,
-				"destination": PROMPT_REWRITER_URL,
-				"instruction_id": instruction_id,
-				"simulated": False,
-				"response": response_body,
-			}
+		with urllib.request.urlopen(req, timeout=120) as response:
+    response_body = response.read().decode("utf-8")
+    parsed_response = json.loads(response_body)
+
+    logger.info("[FORWARDER] Successfully forwarded to %s", PROMPT_REWRITER_URL)
+    return {
+        "forwarded": True,
+        "destination": PROMPT_REWRITER_URL,
+        "instruction_id": instruction_id,
+        "simulated": False,
+        "response": parsed_response,
+    }
 	except Exception as exc:
 		logger.error("[FORWARDER] Failed to forward: %s", str(exc))
 		return {

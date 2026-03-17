@@ -36,7 +36,8 @@ The model accepts a clinical note in JSON format:
 {
   "clinical_note": "Patient is a 58-year-old male with diabetes and chest pain for 2 days."
 }
-```json
+
+---
 
 ## Output Format
 

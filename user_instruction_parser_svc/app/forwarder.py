@@ -1,94 +1,117 @@
 """
 forwarder.py
-Forwards the validated clinical note to the next pipeline block:
-  Prompt Rewriter Block (Phi-3 Mini SLM)
+Forwards the validated clinical note to the Prompt Rewriter Block (Phi-3 Mini SLM)
 
-In development/test mode (PROMPT_REWRITER_URL not set), the forward is
-simulated and logged instead of making a real HTTP call.
+- Uses real HTTP call to rewriter_sft_svc
+- Falls back to simulation if URL is not set
 """
 
-import json
 import os
 import logging
+import requests
 
 logger = logging.getLogger(__name__)
 
+# ✅ IMPORTANT: local development URL (not Docker)
 PROMPT_REWRITER_URL = os.environ.get(
     "PROMPT_REWRITER_URL",
-    "http://rewriter_sft_svc:8000/rewrite"
+    "http://127.0.0.1:8000/rewrite"
 )
+
+TIMEOUT_SECONDS = int(os.environ.get("PROMPT_REWRITER_TIMEOUT", "300"))
 
 
 def forward_to_prompt_rewriter(
-	filename: str,
-	file_content: str,
-	instruction_id: str,
+    filename: str,
+    clinical_note: str,
+    instruction_id: str,
 ) -> dict:
-	"""
-	Forward clinical note content to the Prompt Rewriter Block.
+    """
+    Forward clinical note to rewriter_sft_svc
 
-	Returns a dict with:
-	  - forwarded: bool
-	  - destination: str
-	  - instruction_id: str
-	  - simulated: bool (True when no real endpoint configured)
-	"""
-	payload = {
-		"instruction_id": instruction_id,
-		"filename": filename,
-		"clinical_note": file_content,
-	}
+    Returns:
+        {
+            forwarded: bool,
+            destination: str,
+            instruction_id: str,
+            simulated: bool,
+            response: dict (if success),
+            error: str (if failure)
+        }
+    """
 
-	if not PROMPT_REWRITER_URL:
-		# ── Simulation mode: log and return mock response ───────────────
-		logger.info(
-			"[FORWARDER] Simulated forward to Prompt Rewriter. "
-			"Set PROMPT_REWRITER_URL env var to enable real forwarding. "
-			"Payload keys: %s",
-			list(payload.keys()),
-		)
-		return {
-			"forwarded": True,
-			"destination": "simulated (PROMPT_REWRITER_URL not configured)",
-			"instruction_id": instruction_id,
-			"simulated": True,
-			"payload_preview": {
-				"filename": filename,
-				"note_length": len(file_content),
-				"instruction_id": instruction_id,
-			},
-		}
-
-	# ── Real HTTP POST to Prompt Rewriter Block ────────────────────────
-	try:
-		import urllib.request
-		import urllib.error
-
-		data = json.dumps(payload).encode("utf-8")
-		req = urllib.request.Request(
-			PROMPT_REWRITER_URL,
-			data=data,
-			headers={"Content-Type": "application/json"},
-			method="POST",
-		)
-		with urllib.request.urlopen(req, timeout=120) as response:
-    response_body = response.read().decode("utf-8")
-    parsed_response = json.loads(response_body)
-
-    logger.info("[FORWARDER] Successfully forwarded to %s", PROMPT_REWRITER_URL)
-    return {
-        "forwarded": True,
-        "destination": PROMPT_REWRITER_URL,
+    payload = {
         "instruction_id": instruction_id,
-        "simulated": False,
-        "response": parsed_response,
+        "filename": filename or "uploaded_note.txt",
+        "clinical_note": clinical_note or "",
     }
-	except Exception as exc:
-		logger.error("[FORWARDER] Failed to forward: %s", str(exc))
-		return {
-			"forwarded": False,
-			"destination": PROMPT_REWRITER_URL,
-			"instruction_id": instruction_id,
-			"simulated": False,
-			"error": str(exc),
-		}
+
+    # ── Simulation mode ───────────────────────────────────────────────
+    if not PROMPT_REWRITER_URL:
+        logger.info("[FORWARDER] Simulation mode (no URL set)")
+        return {
+            "forwarded": True,
+            "destination": "simulated",
+            "instruction_id": instruction_id,
+            "simulated": True,
+            "payload_preview": {
+                "filename": filename,
+                "note_length": len(clinical_note),
+                "instruction_id": instruction_id,
+            },
+        }
+
+    # ── Real HTTP call ───────────────────────────────────────────────
+    try:
+        logger.info("[FORWARDER] Calling rewriter at %s", PROMPT_REWRITER_URL)
+
+        response = requests.post(
+            PROMPT_REWRITER_URL,
+            json=payload,
+            timeout=TIMEOUT_SECONDS,
+        )
+
+        response.raise_for_status()
+
+        try:
+            data = response.json()
+        except ValueError:
+            logger.error("[FORWARDER] Response not JSON")
+            return {
+                "forwarded": False,
+                "destination": PROMPT_REWRITER_URL,
+                "instruction_id": instruction_id,
+                "simulated": False,
+                "error": "Invalid JSON response from rewriter",
+                "raw_response": response.text,
+            }
+
+        logger.info("[FORWARDER] Successfully forwarded")
+
+        return {
+            "forwarded": True,
+            "destination": PROMPT_REWRITER_URL,
+            "instruction_id": instruction_id,
+            "simulated": False,
+            "response": data,
+        }
+
+    except requests.Timeout:
+        logger.exception("[FORWARDER] Timeout error")
+        return {
+            "forwarded": False,
+            "destination": PROMPT_REWRITER_URL,
+            "instruction_id": instruction_id,
+            "simulated": False,
+            "error": f"Timeout after {TIMEOUT_SECONDS}s",
+        }
+
+    except requests.RequestException as e:
+        logger.exception("[FORWARDER] Request failed")
+        return {
+            "forwarded": False,
+            "destination": PROMPT_REWRITER_URL,
+            "instruction_id": instruction_id,
+            "simulated": False,
+            "error": str(e),
+        }

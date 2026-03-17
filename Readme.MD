@@ -41,7 +41,7 @@ The model accepts a clinical note in JSON format:
 ## Output Format
 
 ```json
-{
+
 Patient Demographics:
 Age: 58
 Gender: Male
@@ -72,7 +72,7 @@ Not specified
 
 Complications:
 Not specified
-}
+
 ```
 
 ## Repo structure

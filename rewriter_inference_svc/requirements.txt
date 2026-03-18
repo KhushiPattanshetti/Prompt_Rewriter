@@ -2,6 +2,17 @@ fastapi
 uvicorn
 torch
 transformers
+peft
+bitsandbytes
+accelerate
 pydantic
 pytest
 httpx
+ 
+# fastapi
+# uvicorn
+# torch
+# transformers
+# pydantic
+# pytest
+# httpx

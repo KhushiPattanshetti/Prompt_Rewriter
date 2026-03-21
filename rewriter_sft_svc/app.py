@@ -1,4 +1,3 @@
-import os
 import traceback
 import torch
 from fastapi import FastAPI, HTTPException
@@ -8,6 +7,9 @@ from peft import PeftModel
 
 from config import (
     BASE_MODEL_NAME,
+    TRUST_REMOTE_CODE,
+    HF_ADAPTER_REPO,
+    HF_TOKEN,
     SYSTEM_INSTRUCTION,
     MAX_NEW_TOKENS,
     TEMPERATURE,
@@ -30,11 +32,8 @@ class RewriteResponse(BaseModel):
     structured_output: str
 
 
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-ADAPTER_PATH = os.path.join(CURRENT_DIR, "lora_adapter")
-
 # For maximum stability on Mac, force CPU.
-# If you want, you can later switch back to MPS.
+# Change later if you want CUDA/MPS support.
 device = "cpu"
 
 tokenizer = None
@@ -55,10 +54,11 @@ Convert the following clinical note into the required structured clinical note f
 
 
 try:
-    print("Loading tokenizer...")
+    print("Loading tokenizer from base model...")
     tokenizer = AutoTokenizer.from_pretrained(
         BASE_MODEL_NAME,
-        trust_remote_code=True
+        trust_remote_code=TRUST_REMOTE_CODE,
+        token=HF_TOKEN,
     )
 
     if tokenizer.eos_token is None:
@@ -70,21 +70,26 @@ try:
     tokenizer.padding_side = "left"
 
     print(f"Using device: {device}")
-    print("Loading base model...")
+    print("Loading base model from Hugging Face...")
 
     base_model = AutoModelForCausalLM.from_pretrained(
         BASE_MODEL_NAME,
-        trust_remote_code=True,
-        torch_dtype=torch.float32
+        trust_remote_code=TRUST_REMOTE_CODE,
+        torch_dtype=torch.float32,
+        token=HF_TOKEN,
     ).to(device)
 
-    print("Loading LoRA adapter...")
-    model = PeftModel.from_pretrained(base_model, ADAPTER_PATH)
+    print(f"Loading LoRA adapter from Hugging Face repo: {HF_ADAPTER_REPO}")
+    model = PeftModel.from_pretrained(
+        base_model,
+        HF_ADAPTER_REPO,
+        token=HF_TOKEN,
+    )
     model = model.to(device)
     model.eval()
 
     model_loaded = True
-    print("Model loaded successfully.")
+    print("Model loaded successfully from Hugging Face.")
 
 except Exception as e:
     load_error = str(e)
@@ -100,6 +105,7 @@ def root():
         "status": "running",
         "model_loaded": model_loaded,
         "device": device,
+        "adapter_repo": HF_ADAPTER_REPO,
     }
 
 
@@ -110,6 +116,7 @@ def health():
         "status": "ok" if model_loaded else "error",
         "model_loaded": model_loaded,
         "device": device,
+        "adapter_repo": HF_ADAPTER_REPO,
         "load_error": load_error,
     }
 
@@ -142,15 +149,20 @@ def rewrite(req: RewriteRequest):
         eos_token_id = tokenizer.eos_token_id
         pad_token_id = tokenizer.pad_token_id or eos_token_id
 
+        generate_kwargs = {
+            "input_ids": inputs["input_ids"],
+            "attention_mask": inputs.get("attention_mask"),
+            "max_new_tokens": MAX_NEW_TOKENS,
+            "do_sample": DO_SAMPLE,
+            "eos_token_id": int(eos_token_id),
+            "pad_token_id": int(pad_token_id),
+        }
+
+        if TEMPERATURE is not None and DO_SAMPLE:
+            generate_kwargs["temperature"] = TEMPERATURE
+
         with torch.no_grad():
-            outputs = model.generate(
-                input_ids=inputs["input_ids"],
-                attention_mask=inputs.get("attention_mask"),
-                max_new_tokens=MAX_NEW_TOKENS,
-                do_sample=DO_SAMPLE,
-                eos_token_id=int(eos_token_id),
-                pad_token_id=int(pad_token_id),
-            )
+            outputs = model.generate(**generate_kwargs)
 
         prompt_len = inputs["input_ids"].shape[1]
         generated_ids = outputs[0][prompt_len:]

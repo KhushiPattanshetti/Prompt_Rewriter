@@ -35,29 +35,60 @@ rewriter_sft_svc/.env
 *.ckpt
 *.safetensors
 *.pth
+*.pt.tmp
+*.bin.tmp
 
 # Hugging Face / checkpoints
 sft_checkpoints/
 checkpoints/
 **/lora_adapter/
 
+# Hugging Face cache
+.cache/
+huggingface/
+~/.cache/huggingface/
+
 # ─────────────────────────────────────────────
-# Data files (optional - adjust if needed)
+# Data files
 # ─────────────────────────────────────────────
 *.csv
 *.tsv
 *.jsonl
+data/
+datasets/
 
 # ─────────────────────────────────────────────
 # Logs
 # ─────────────────────────────────────────────
 *.log
+logs/
+
+# ─────────────────────────────────────────────
+# Build
+# ─────────────────────────────────────────────
+build/
+dist/
+*.egg-info/
+
+# ─────────────────────────────────────────────
+# Testing
+# ─────────────────────────────────────────────
+.coverage
+htmlcov/
+.pytest_cache/
 
 # ─────────────────────────────────────────────
 # IDE / Editor
 # ─────────────────────────────────────────────
 .vscode/
 .idea/
+
+# ─────────────────────────────────────────────
+# Docker
+# ─────────────────────────────────────────────
+*.tar
+*.tar.gz
+docker-compose.override.yml
 
 # ─────────────────────────────────────────────
 # Mac + misc

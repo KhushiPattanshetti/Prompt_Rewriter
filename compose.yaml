@@ -1,0 +1,19 @@
+services:
+  rewriter_sft_svc:
+    build: ./rewriter_sft_svc
+    container_name: rewriter_sft_svc
+    ports:
+      - "8000:8000"
+    environment:
+      HF_TOKEN: ${HF_TOKEN}
+      HF_ADAPTER_REPO: ${HF_ADAPTER_REPO}
+
+  user_instruction_parser_svc:
+    build: ./user_instruction_parser_svc
+    container_name: user_instruction_parser_svc
+    ports:
+      - "8001:8000"
+    depends_on:
+      - rewriter_sft_svc
+    environment:
+      PROMPT_REWRITER_URL: http://rewriter_sft_svc:8000/rewrite

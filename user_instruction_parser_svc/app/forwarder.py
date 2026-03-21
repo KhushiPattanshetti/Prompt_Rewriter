@@ -12,10 +12,9 @@ import requests
 
 logger = logging.getLogger(__name__)
 
-# ✅ IMPORTANT: local development URL (not Docker)
 PROMPT_REWRITER_URL = os.environ.get(
     "PROMPT_REWRITER_URL",
-    "http://127.0.0.1:8000/rewrite"
+    "http://rewriter_sft_svc:8000/rewrite"
 )
 
 TIMEOUT_SECONDS = int(os.environ.get("PROMPT_REWRITER_TIMEOUT", "300"))

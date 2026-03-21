@@ -1,9 +1,13 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 import traceback
 import torch
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from peft import PeftModel
+
 
 from config import (
     BASE_MODEL_NAME,

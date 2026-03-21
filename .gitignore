@@ -1,28 +1,66 @@
+# ─────────────────────────────────────────────
+# Python
+# ─────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# Virtual environments
 venv/
 venv311/
-__pycache__/
-*.pyc
-.ipynb_checkpoints/
-.DS_Store
-*.pt
-*.bin
-*.safetensors
-*.ckpt
-*.csv
-# model files
-
-
-
-# mac
-.DS_Store
-sft_checkpoints/
-**/lora_adapter/
-*.safetensors
-*.bin
-*.pt
-*.pth
-__pycache__/
-*.pyc
 .venv/
-venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# ─────────────────────────────────────────────
+# Environment variables (VERY IMPORTANT)
+# ─────────────────────────────────────────────
+.env
+*.env
+rewriter_sft_svc/.env
+
+# ─────────────────────────────────────────────
+# OS files
+# ─────────────────────────────────────────────
 .DS_Store
+
+# ─────────────────────────────────────────────
+# Model files (DO NOT PUSH)
+# ─────────────────────────────────────────────
+*.pt
+*.bin
+*.ckpt
+*.safetensors
+*.pth
+
+# Hugging Face / checkpoints
+sft_checkpoints/
+checkpoints/
+**/lora_adapter/
+
+# ─────────────────────────────────────────────
+# Data files (optional - adjust if needed)
+# ─────────────────────────────────────────────
+*.csv
+*.tsv
+*.jsonl
+
+# ─────────────────────────────────────────────
+# Logs
+# ─────────────────────────────────────────────
+*.log
+
+# ─────────────────────────────────────────────
+# IDE / Editor
+# ─────────────────────────────────────────────
+.vscode/
+.idea/
+
+# ─────────────────────────────────────────────
+# Mac + misc
+# ─────────────────────────────────────────────
+*.swp
+*.swo

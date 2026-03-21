@@ -9,3 +9,17 @@ __pycache__/
 *.safetensors
 *.ckpt
 *.csv
+# model files
+sft_checkpoints/
+*.safetensors
+*.bin
+*.pt
+
+# python
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# mac
+.DS_Store

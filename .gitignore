@@ -10,16 +10,19 @@ __pycache__/
 *.ckpt
 *.csv
 # model files
+
+
+
+# mac
+.DS_Store
 sft_checkpoints/
+**/lora_adapter/
 *.safetensors
 *.bin
 *.pt
-
-# python
+*.pth
 __pycache__/
 *.pyc
-venv/
 .venv/
-
-# mac
+venv/
 .DS_Store
